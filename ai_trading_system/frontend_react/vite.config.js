@@ -11,5 +11,13 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
-  }
+  },
+  optimizeDeps: {
+    include: ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing', 'gsap'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
+  },
 })

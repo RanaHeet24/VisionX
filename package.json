@@ -5,12 +5,17 @@
     "tailwindcss": "^4.2.1"
   },
   "dependencies": {
+    "@react-three/drei": "^9.105.6",
+    "@react-three/fiber": "^8.16.1",
+    "@react-three/postprocessing": "^2.16.2",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
     "framer-motion": "^12.36.0",
+    "gsap": "^3.14.2",
     "lucide-react": "^0.577.0",
     "react-router-dom": "^7.13.1",
     "recharts": "^3.8.0",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "three": "^0.183.2"
   }
 }

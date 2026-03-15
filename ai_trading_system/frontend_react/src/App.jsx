@@ -9,6 +9,10 @@ import LiquidationHeatmap from './pages/LiquidationHeatmap';
 import CorrelationEngine from './pages/CorrelationEngine';
 import DynamicStopLoss from './pages/DynamicStopLoss';
 import SocialSentiment from './pages/SocialSentiment';
+import WhaleTracker from './pages/WhaleTracker';
+import SpoofingDetector from './pages/SpoofingDetector';
+import DarkPoolTracker from './pages/DarkPoolTracker';
+import SmartContractAudit from './pages/SmartContractAudit';
 
 function App() {
   return (
@@ -22,6 +26,12 @@ function App() {
         <Route path="/leadlag" element={<CorrelationEngine />} />
         <Route path="/stoploss" element={<DynamicStopLoss />} />
         <Route path="/sentiment" element={<SocialSentiment />} />
+        
+        {/* Institutional Features */}
+        <Route path="/whales" element={<WhaleTracker />} />
+        <Route path="/spoofing" element={<SpoofingDetector />} />
+        <Route path="/darkpool" element={<DarkPoolTracker />} />
+        <Route path="/audit" element={<SmartContractAudit />} />
       </Route>
     </Routes>
   );

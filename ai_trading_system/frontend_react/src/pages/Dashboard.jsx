@@ -14,7 +14,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Initial load
   useEffect(() => {
     const init = async () => {
       try {
@@ -22,14 +21,12 @@ function Dashboard() {
         const coins = await cryptoApi.getTopCoins();
         setTopCoins(coins);
         
-        // Select first coin by default (usually BTC)
         const firstCoinId = Object.keys(coins)[0];
         if (firstCoinId) {
           setSelectedCoin(firstCoinId);
           await fetchCoinData(firstCoinId);
         }
 
-        // Fetch global metrics
         const global = await cryptoApi.getGlobalMetrics();
         setGlobalMetrics(global);
         
@@ -44,14 +41,11 @@ function Dashboard() {
     init();
   }, []);
 
-  // Poll for updates every 30 seconds
   useEffect(() => {
     if (!selectedCoin) return;
-    
     const interval = setInterval(() => {
       fetchCoinData(selectedCoin);
     }, 30000);
-
     return () => clearInterval(interval);
   }, [selectedCoin]);
 
@@ -78,10 +72,10 @@ function Dashboard() {
 
   if (loading && !selectedCoin) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center">
-          <RefreshCw className="h-8 w-8 text-blue-500 animate-spin mb-4" />
-          <p className="text-gray-400">Warming up AI Engine...</p>
+          <RefreshCw className="h-10 w-10 text-yellow-500 animate-spin mb-4 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
+          <p className="text-gray-400 font-bold tracking-widest uppercase text-sm">Initializing War Room...</p>
         </div>
       </div>
     );
@@ -89,150 +83,182 @@ function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="bg-red-900/50 border border-red-500 text-red-200 p-6 rounded-xl max-w-md text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-400" />
-          <h2 className="text-xl font-bold mb-2">Connection Error</h2>
-          <p>{error}</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="bg-red-900/30 backdrop-blur-md border border-red-500/50 text-red-200 p-8 rounded-2xl max-w-md text-center shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+          <AlertTriangle className="h-14 w-14 mx-auto mb-4 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]" />
+          <h2 className="text-2xl font-black tracking-tight mb-2">CRITICAL FAULT</h2>
+          <p className="text-red-300 font-medium">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-sans p-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
       {/* Header */}
-      <header className="max-w-7xl mx-auto flex items-center justify-between mb-8 pb-4 border-b border-gray-800">
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-600 p-2 rounded-lg">
-            <Activity className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">Multi-Crypto <span className="text-blue-500">AI Signal Engine</span></h1>
-        </div>
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-400 bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 p-3 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.3)]">
+            <Activity className="h-7 w-7 text-black" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black tracking-tighter">VISION<span className="text-yellow-400">X</span> MAINFRAME</h1>
+            <p className="text-gray-400 font-bold tracking-widest uppercase text-xs mt-1">Institutional Multi-Asset Signal Engine</p>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <select 
+              value={selectedCoin}
+              onChange={handleCoinChange}
+              className="block w-full pl-4 pr-10 py-3 text-sm font-bold border-white/10 bg-black/40 backdrop-blur-md text-white border focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 rounded-xl uppercase tracking-widest appearance-none shadow-inner"
+            >
+              {Object.entries(topCoins).map(([id, symbol]) => (
+                <option key={id} value={id} className="bg-gray-900">{symbol} ({id})</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center space-x-3 text-xs text-yellow-500 bg-yellow-500/10 px-4 py-3 rounded-xl border border-yellow-500/20 backdrop-blur-md whitespace-nowrap">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
             </span>
-            <span>Online Learning Active</span>
+            <span className="font-bold tracking-widest uppercase">SGD Active</span>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto space-y-8">
-        {/* Controls */}
-        <div className="flex items-center space-x-4 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm">
-          <div className="flex-1 max-w-xs">
-            <label className="block text-sm font-medium text-gray-400 mb-1">Select Asset (Auto-retrains Model)</label>
-            <select 
-              value={selectedCoin}
-              onChange={handleCoinChange}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-600 bg-gray-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              {Object.entries(topCoins).map(([id, symbol]) => (
-                <option key={id} value={id}>{symbol} ({id})</option>
-              ))}
-            </select>
-          </div>
-          {loading && selectedCoin && (
-            <div className="flex items-center space-x-2 text-blue-400">
-              <RefreshCw className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Recalculating weights...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Dashboards */}
-        {liveData && predictionData && !loading && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex items-center space-x-2 mb-4">
-              <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
-                {liveData.symbol} Dashboard
-              </h2>
-            </div>
+      {/* Main Dashboards */}
+      {liveData && predictionData && !loading && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <MetricCard 
-                title="Current Price" 
-                value={`$${liveData.current_price.toLocaleString()}`}
-                subtext={`${liveData.price_change_24h > 0 ? '+' : ''}${liveData.price_change_24h.toFixed(2)}%`}
-                subtextColor={liveData.price_change_24h > 0 ? 'text-green-500' : 'text-red-500'}
-              />
-              <MetricCard 
-                title="Market Cap" 
-                value={`$${(liveData.market_cap / 1e9).toFixed(2)}B`} 
-              />
-              <MetricCard 
-                title="Model Accuracy" 
-                value={`${(predictionData.accuracy * 100).toFixed(2)}%`} 
-                subtext={`${predictionData.total_samples} samples`}
-                subtextColor="text-gray-500"
-              />
-              <div className={`rounded-xl p-6 shadow-lg border ${predictionData.prediction === 'BUY' ? 'border-green-500/50 bg-green-900/20' : 'border-red-500/50 bg-red-900/20'}`}>
-                <h3 className="text-gray-400 text-sm font-medium mb-2">AI Signal</h3>
-                <div className="flex items-baseline space-x-2">
-                  <span className={`text-2xl font-bold ${predictionData.prediction === 'BUY' ? 'text-green-400' : 'text-red-400'}`}>
-                    {predictionData.prediction}
-                  </span>
-                  <span className="text-sm font-medium text-gray-300">
-                    {(predictionData.confidence * 100).toFixed(1)}% Conf
-                  </span>
-                </div>
+            {/* Dark glass card styling for metrics */}
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <h3 className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Current Price</h3>
+              <div className="text-3xl font-black text-white mb-2">${liveData.current_price.toLocaleString()}</div>
+              <div className={`text-sm font-bold ${liveData.price_change_24h > 0 ? 'text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]'}`}>
+                {liveData.price_change_24h > 0 ? '+' : ''}{liveData.price_change_24h.toFixed(2)}%
               </div>
             </div>
 
-            {/* Chart Area */}
-            <div className="mt-8">
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <h3 className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Market Cap</h3>
+              <div className="text-3xl font-black text-white mb-2">${(liveData.market_cap / 1e9).toFixed(2)}B</div>
+              <div className="text-sm font-bold text-gray-500">Global Liquidity</div>
+            </div>
+
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">
+              <h3 className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1">Model Accuracy</h3>
+              <div className="text-3xl font-black text-white mb-2 flex items-baseline gap-2">
+                <span>{(predictionData.accuracy * 100).toFixed(2)}%</span>
+              </div>
+              <div className="text-sm font-bold text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]">{predictionData.total_samples} Epochs</div>
+            </div>
+
+            <div className={`rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl border relative overflow-hidden ${predictionData.prediction === 'BUY' ? 'border-green-500/30 bg-green-900/10' : 'border-red-500/30 bg-red-900/10'}`}>
+              <div className={`absolute -right-10 -top-10 w-32 h-32 blur-[60px] opacity-40 ${predictionData.prediction === 'BUY' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <h3 className="text-gray-400 text-xs font-black uppercase tracking-widest mb-1 relative z-10">AI Execution Signal</h3>
+              <div className="flex items-baseline space-x-3 mt-2 relative z-10">
+                <span className={`text-4xl font-black tracking-tighter ${predictionData.prediction === 'BUY' ? 'text-green-400 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]' : 'text-red-400 drop-shadow-[0_0_15px_rgba(248,113,113,0.5)]'}`}>
+                  {predictionData.prediction}
+                </span>
+                <span className="text-sm font-bold text-gray-300">
+                  {(predictionData.confidence * 100).toFixed(1)}% CONF
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Chart Area */}
+          <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+            <h3 className="text-gray-300 text-sm font-black uppercase tracking-widest mb-6 flex items-center gap-2">
+              <ActivitySquare className="w-5 h-5 text-yellow-500" />
+              Real-time Trajectory
+            </h3>
+            <div className="h-[400px]">
               <PriceChart data={predictionData.chart_data} />
             </div>
+          </div>
 
-            {/* Feature Details */}
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-3">Latest Features</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                {Object.entries(predictionData.features).map(([key, val]) => (
-                  <div key={key} className="bg-gray-700/50 rounded-lg p-3">
-                    <span className="text-xs text-gray-400 block">{key}</span>
-                    <span className="text-sm font-mono text-white">{typeof val === 'number' ? val.toFixed(4) : val}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Feature Details */}
+          <div className="bg-black/40 backdrop-blur-xl rounded-[2rem] p-6 md:p-8 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+            <h3 className="text-gray-300 text-sm font-black uppercase tracking-widest mb-6">Neural Features</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {Object.entries(predictionData.features).map(([key, val]) => (
+                <div key={key} className="bg-white/5 border border-white/5 rounded-xl p-4 hover:bg-white/10 transition-colors">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block mb-1 truncate" title={key}>{key.replace(/_/g, ' ')}</span>
+                  <span className="text-lg font-black text-white">{typeof val === 'number' ? val.toFixed(4) : val}</span>
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Global Analytics */}
-        {globalMetrics && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold flex items-center space-x-2">
-              <Layers className="h-5 w-5 text-purple-400" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Global Crypto Analytics</span>
-            </h2>
+      {/* Global Analytics */}
+      {globalMetrics && (
+        <div className="space-y-6 pt-8 border-t border-white/10">
+          <h2 className="text-2xl font-black flex items-center space-x-3">
+            <Layers className="h-6 w-6 text-yellow-500" />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600 drop-shadow-md tracking-tight">GLOBAL ECONOMY METRICS</span>
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Volatility Ranking */}
+            {globalMetrics.volatility && (
+              <div className="bg-black/40 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] lg:col-span-1">
+                <h3 className="text-gray-300 text-sm font-black uppercase tracking-widest mb-6">Volatility Index</h3>
+                <div className="space-y-4">
+                  {Object.entries(globalMetrics.volatility)
+                    .sort(([,a], [,b]) => b - a)
+                    .map(([sym, vol]) => {
+                      const maxVol = Math.max(...Object.values(globalMetrics.volatility));
+                      const pct = maxVol > 0 ? (vol / maxVol) * 100 : 0;
+                      return (
+                        <div key={sym} className="flex items-center space-x-4">
+                          <span className="w-12 text-sm font-black text-white">{sym}</span>
+                          <div className="flex-1 bg-white/5 rounded-full h-2 overflow-hidden shadow-inner">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-red-500 shadow-[0_0_10px_rgba(250,204,21,0.5)]"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="w-20 text-right text-xs font-bold text-gray-400">${vol.toFixed(2)}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* Correlation Matrix */}
             {globalMetrics.correlation && (
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 overflow-x-auto">
-                <h3 className="text-lg font-semibold text-white mb-4">Correlation Matrix</h3>
-                <table className="min-w-full text-sm">
+              <div className="bg-black/40 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] lg:col-span-2 overflow-x-auto custom-scrollbar">
+                <h3 className="text-gray-300 text-sm font-black uppercase tracking-widest mb-6">Correlation Matrix</h3>
+                <table className="min-w-full text-sm border-separate border-spacing-1">
                   <thead>
                     <tr>
-                      <th className="px-3 py-2 text-left text-gray-400"></th>
+                      <th className="p-2 text-left text-gray-500 font-bold uppercase tracking-widest text-[10px]"></th>
                       {Object.keys(globalMetrics.correlation).map(sym => (
-                        <th key={sym} className="px-3 py-2 text-center text-gray-300 font-medium">{sym}</th>
+                        <th key={sym} className="p-2 text-center text-gray-400 font-black tracking-widest">{sym}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(globalMetrics.correlation).map(([rowSym, cols]) => (
-                      <tr key={rowSym} className="border-t border-gray-700">
-                        <td className="px-3 py-2 font-medium text-gray-300">{rowSym}</td>
+                      <tr key={rowSym}>
+                        <td className="p-2 font-black text-white tracking-widest">{rowSym}</td>
                         {Object.entries(cols).map(([colSym, val]) => {
-                          const intensity = Math.abs(val);
-                          const bg = val > 0.7 ? 'bg-green-900/40' : val > 0.3 ? 'bg-green-900/20' : val < -0.3 ? 'bg-red-900/20' : '';
+                          let bg = 'bg-white/5';
+                          let text = 'text-gray-400';
+                          if (val > 0.7) { bg = 'bg-green-500/20 border-green-500/30'; text = 'text-green-400 font-black'; }
+                          else if (val > 0.3) { bg = 'bg-green-500/10 border-green-500/20'; text = 'text-green-300'; }
+                          else if (val < -0.3) { bg = 'bg-red-500/10 border-red-500/20'; text = 'text-red-300'; }
+                          
                           return (
-                            <td key={colSym} className={`px-3 py-2 text-center font-mono text-xs ${bg}`}>
-                              {val.toFixed(3)}
+                            <td key={colSym} className={`p-3 text-center rounded-lg border border-transparent ${bg} ${text} transition-colors hover:border-white/20`}>
+                              {val.toFixed(2)}
                             </td>
                           );
                         })}
@@ -242,41 +268,13 @@ function Dashboard() {
                 </table>
               </div>
             )}
-
-            {/* Volatility Ranking */}
-            {globalMetrics.volatility && (
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-4">Volatility Ranking</h3>
-                <div className="space-y-3">
-                  {Object.entries(globalMetrics.volatility)
-                    .sort(([,a], [,b]) => b - a)
-                    .map(([sym, vol]) => {
-                      const maxVol = Math.max(...Object.values(globalMetrics.volatility));
-                      const pct = maxVol > 0 ? (vol / maxVol) * 100 : 0;
-                      return (
-                        <div key={sym} className="flex items-center space-x-3">
-                          <span className="w-16 text-sm font-medium text-gray-300">{sym}</span>
-                          <div className="flex-1 bg-gray-700 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="w-24 text-right text-xs font-mono text-gray-400">${vol.toFixed(2)}</span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
           </div>
-        )}
-
-      </main>
+        </div>
+      )}
 
       {/* Footer */}
-      <footer className="max-w-7xl mx-auto mt-12 pt-6 border-t border-gray-800 text-center text-gray-500 text-sm">
-        <p>Multi-Crypto AI Signal Engine &mdash; Online Learning &bull; Auto-refresh every 30s</p>
+      <footer className="mt-12 pt-8 border-t border-white/10 text-center text-gray-500 text-[10px] font-black tracking-[0.3em] uppercase opacity-50">
+        <p>VISIONX MAINFRAME &mdash; ONLINE LEARNING &bull; AUTO-REFRESH 30S</p>
       </footer>
     </div>
   );

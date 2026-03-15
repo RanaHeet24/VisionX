@@ -9,15 +9,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "9.102.0",
+    "@react-three/fiber": "8.18.0",
+    "@react-three/postprocessing": "2.15.11",
     "axios": "^1.7.0",
     "clsx": "^2.1.0",
     "framer-motion": "^12.36.0",
+    "gsap": "3.14.2",
     "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.13.1",
     "recharts": "^2.12.0",
-    "tailwind-merge": "^2.3.0"
+    "tailwind-merge": "^2.3.0",
+    "three": "0.158.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.0",
