@@ -106,12 +106,12 @@ const Layout = () => {
             </div>
 
             <div className="p-6 border-t border-white/5 bg-gradient-to-t from-black/80 to-transparent">
-              <div className="flex items-center justify-center space-x-3 text-xs text-yellow-500 bg-yellow-500/10 px-4 py-3 rounded-xl border border-yellow-500/20 backdrop-blur-md shadow-[0_0_30px_rgba(250,204,21,0.1)]">
+              <div className="flex items-center justify-center space-x-3 text-xs text-cyan-400 bg-cyan-500/10 px-4 py-3 rounded-xl border border-cyan-500/20 backdrop-blur-md shadow-[0_0_30px_rgba(6,182,212,0.15)] group hover:bg-cyan-500/20 hover:shadow-[0_0_40px_rgba(6,182,212,0.3)] transition-all duration-500 cursor-default">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400 shadow-[0_0_10px_#22d3ee]"></span>
                 </span>
-                <span className="font-bold tracking-widest uppercase">System Online</span>
+                <span className="font-bold tracking-widest uppercase text-cyan-300 group-hover:text-cyan-100 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all delay-75">System Online</span>
               </div>
             </div>
           </motion.nav>
