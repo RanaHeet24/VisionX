@@ -1,8 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { RefreshCw, Activity, Layers, ActivitySquare, AlertTriangle } from 'lucide-react';
 import { cryptoApi } from '../services/api';
 import MetricCard from '../components/MetricCard';
 import PriceChart from '../components/PriceChart';
+
+// Skeleton loader for perceived performance
+const SkeletonCard = () => (
+  <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_30px_rgba(0,0,0,0.5)] animate-pulse">
+    <div className="h-3 w-24 bg-white/10 rounded mb-3"></div>
+    <div className="h-8 w-32 bg-white/5 rounded mb-2"></div>
+    <div className="h-4 w-16 bg-white/5 rounded"></div>
+  </div>
+);
+
+const SkeletonChart = () => (
+  <div className="bg-black/40 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-[0_10px_40px_rgba(0,0,0,0.6)] animate-pulse">
+    <div className="h-4 w-40 bg-white/10 rounded mb-6"></div>
+    <div className="h-[400px] bg-white/5 rounded-xl flex items-center justify-center">
+      <RefreshCw className="h-8 w-8 text-yellow-500/30 animate-spin" />
+    </div>
+  </div>
+);
 
 function Dashboard() {
   const [topCoins, setTopCoins] = useState({});
@@ -12,23 +30,37 @@ function Dashboard() {
   const [globalMetrics, setGlobalMetrics] = useState(null);
   
   const [loading, setLoading] = useState(true);
+  const [coinDataLoading, setCoinDataLoading] = useState(true);
+  const [globalLoading, setGlobalLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       try {
         setLoading(true);
-        const coins = await cryptoApi.getTopCoins();
+        
+        // Step 1: Start fetching top coins + global metrics IN PARALLEL
+        const coinsPromise = cryptoApi.getTopCoins();
+        const globalPromise = cryptoApi.getGlobalMetrics()
+          .then(global => { setGlobalMetrics(global); setGlobalLoading(false); })
+          .catch(err => { console.error('Global metrics error:', err); setGlobalLoading(false); });
+
+        // Wait for coins first so we can start coin-specific data
+        const coins = await coinsPromise;
         setTopCoins(coins);
         
         const firstCoinId = Object.keys(coins)[0];
         if (firstCoinId) {
           setSelectedCoin(firstCoinId);
-          await fetchCoinData(firstCoinId);
+          
+          // Fire warmup POST (fire-and-forget) + fetch coin data in parallel
+          cryptoApi.warmupModel(firstCoinId).catch(() => {});
+          
+          fetchCoinData(firstCoinId).then(() => setCoinDataLoading(false));
         }
 
-        const global = await cryptoApi.getGlobalMetrics();
-        setGlobalMetrics(global);
+        // Wait for global to finish too
+        await globalPromise;
         
         setError(null);
       } catch (err) {
@@ -65,18 +97,31 @@ function Dashboard() {
   const handleCoinChange = async (e) => {
     const coinId = e.target.value;
     setSelectedCoin(coinId);
-    setLoading(true);
+    setCoinDataLoading(true);
     await fetchCoinData(coinId);
-    setLoading(false);
+    setCoinDataLoading(false);
   };
 
   if (loading && !selectedCoin) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center">
-          <RefreshCw className="h-10 w-10 text-yellow-500 animate-spin mb-4 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-          <p className="text-gray-400 font-bold tracking-widest uppercase text-sm">Initializing War Room...</p>
+      <div className="space-y-8 animate-in fade-in duration-500">
+        {/* Skeleton Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div className="flex items-center space-x-4">
+            <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 p-3 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.3)]">
+              <Activity className="h-7 w-7 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-black tracking-tighter">VISION<span className="text-yellow-400">X</span> MAINFRAME</h1>
+              <p className="text-gray-400 font-bold tracking-widest uppercase text-xs mt-1">Initializing War Room...</p>
+            </div>
+          </div>
+        </header>
+        {/* Skeleton Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
         </div>
+        <SkeletonChart />
       </div>
     );
   }

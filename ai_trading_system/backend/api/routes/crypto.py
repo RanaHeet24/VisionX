@@ -1,16 +1,42 @@
-import requests
+import httpx
+import asyncio
 import pandas as pd
 import numpy as np
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from sklearn.linear_model import SGDClassifier
 from sklearn.preprocessing import StandardScaler
 import ta
 import logging
+import time
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# --- In-Memory TTL Cache ---
+_cache: Dict[str, Any] = {}
+_cache_timestamps: Dict[str, float] = {}
+CACHE_TTL = 60  # seconds
+
+def cache_get(key: str):
+    if key in _cache and (time.time() - _cache_timestamps.get(key, 0)) < CACHE_TTL:
+        return _cache[key]
+    return None
+
+def cache_set(key: str, value: Any):
+    _cache[key] = value
+    _cache_timestamps[key] = time.time()
+
+# Shared async HTTP client (connection pooling)
+_http_client: httpx.AsyncClient = None
+
+def get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=30.0)
+    return _http_client
 
 # Constants (from app.py)
 API_KEY = "CG-JrddorbGvoGXYrefNVosBPGk"
@@ -22,6 +48,26 @@ models_store = {}
 
 def get_headers():
     return {"x-cg-demo-api-key": API_KEY}
+
+# --- Async version of fetch_historical_data ---
+async def fetch_historical_data_async(coin_id: str, days: int = 90):
+    cache_key = f"hist_{coin_id}_{days}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
+    url = f"{BASE_URL}/coins/{coin_id}/market_chart"
+    params = {"vs_currency": "usd", "days": days, "interval": "daily"}
+    client = get_http_client()
+    response = await client.get(url, headers=get_headers(), params=params)
+    if response.status_code == 200:
+        data = response.json()
+        df = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+        cache_set(cache_key, df)
+        return df
+    return None
 
 # Helper AI functions (moved from app.py)
 def add_features(df):
@@ -44,14 +90,22 @@ def initialize_model():
     return {'scaler': scaler, 'classifier': classifier}, 0, 0
 
 def fetch_historical_data_internal(coin_id: str, days: int = 90):
+    """Synchronous fallback - only used by warmup_model."""
+    import requests as sync_requests
+    cache_key = f"hist_{coin_id}_{days}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
     url = f"{BASE_URL}/coins/{coin_id}/market_chart"
     params = {"vs_currency": "usd", "days": days, "interval": "daily"}
-    response = requests.get(url, headers=get_headers(), params=params)
+    response = sync_requests.get(url, headers=get_headers(), params=params)
     if response.status_code == 200:
         data = response.json()
         df = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df.set_index('timestamp', inplace=True)
+        cache_set(cache_key, df)
         return df
     return None
 
@@ -80,6 +134,11 @@ def warmup_model(coin_id):
 @router.get("/top", response_model=Dict[str, str])
 async def get_top_coins(limit: int = 20):
     """Fetch top cryptocurrencies by market cap."""
+    cache_key = f"top_coins_{limit}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
     url = f"{BASE_URL}/coins/markets"
     params = {
         "vs_currency": "usd",
@@ -88,15 +147,23 @@ async def get_top_coins(limit: int = 20):
         "page": 1,
         "sparkline": False
     }
-    response = requests.get(url, headers=get_headers(), params=params)
+    client = get_http_client()
+    response = await client.get(url, headers=get_headers(), params=params)
     if response.status_code == 200:
         data = response.json()
-        return {coin['id']: coin['symbol'].upper() for coin in data}
+        result = {coin['id']: coin['symbol'].upper() for coin in data}
+        cache_set(cache_key, result)
+        return result
     raise HTTPException(status_code=500, detail=f"CoinGecko API Error: {response.status_code}")
 
 @router.get("/live/{coin_id}")
 async def get_live_data(coin_id: str):
     """Fetch live data for a specific coin."""
+    cache_key = f"live_{coin_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
     url = f"{BASE_URL}/coins/markets"
     params = {
         "vs_currency": "usd",
@@ -106,33 +173,43 @@ async def get_live_data(coin_id: str):
         "page": 1,
         "sparkline": False
     }
-    response = requests.get(url, headers=get_headers(), params=params)
+    client = get_http_client()
+    response = await client.get(url, headers=get_headers(), params=params)
     if response.status_code == 200:
         data = response.json()
         if data:
             coin_data = data[0]
-            return {
+            result = {
                 "current_price": coin_data.get('current_price'),
                 "price_change_24h": coin_data.get('price_change_percentage_24h'),
                 "market_cap": coin_data.get('market_cap'),
                 "symbol": coin_data.get('symbol').upper()
             }
+            cache_set(cache_key, result)
+            return result
         raise HTTPException(status_code=404, detail="Coin not found")
     raise HTTPException(status_code=500, detail="CoinGecko API Error")
 
 @router.get("/predict/{coin_id}")
 async def get_prediction(coin_id: str):
     """Warmup model (if needed), generate features, make prediction, and update model inline."""
-    # Warmup if not in memory
+    # Check prediction cache first (short TTL = 30s for predictions)
+    pred_cache_key = f"prediction_{coin_id}"
+    cached_pred = cache_get(pred_cache_key)
+    if cached_pred is not None:
+        return cached_pred
+    
+    # Warmup if not in memory - run in thread pool to not block event loop
     if coin_id not in models_store:
-        model, correct, total_samples = warmup_model(coin_id)
+        loop = asyncio.get_event_loop()
+        model, correct, total_samples = await loop.run_in_executor(None, warmup_model, coin_id)
         if model:
             models_store[coin_id] = (model, correct, total_samples)
         else:
             raise HTTPException(status_code=500, detail="Failed to warmup model")
 
-    # Fetch 30-day history for indicator calculation
-    hist_df = fetch_historical_data_internal(coin_id, days=30)
+    # Fetch 30-day history for indicator calculation (async)
+    hist_df = await fetch_historical_data_async(coin_id, days=30)
     if hist_df is None:
         raise HTTPException(status_code=500, detail="Failed to fetch history")
 
@@ -181,7 +258,7 @@ async def get_prediction(coin_id: str):
     # Replace NaN with None (null in JSON)
     chart_data = chart_data.where(pd.notnull(chart_data), None)
     
-    return {
+    result = {
         "features": x,
         "prediction": "BUY" if prediction == 1 else "SELL",
         "confidence": confidence,
@@ -189,6 +266,8 @@ async def get_prediction(coin_id: str):
         "total_samples": total_samples,
         "chart_data": chart_data.to_dict(orient="records")
     }
+    cache_set(pred_cache_key, result)
+    return result
 
 @router.get("/regime/{coin_id}")
 async def get_market_regime(coin_id: str):
@@ -196,7 +275,7 @@ async def get_market_regime(coin_id: str):
     Simulates unsupervised market regime detection (e.g., K-Means on Volatility & Returns).
     Returns current regime and historical regime states.
     """
-    hist_df = fetch_historical_data_internal(coin_id, days=30)
+    hist_df = await fetch_historical_data_async(coin_id, days=30)
     if hist_df is None:
         raise HTTPException(status_code=500, detail="Failed to fetch history")
         
@@ -263,7 +342,7 @@ async def get_model_explanation(coin_id: str):
     if coin_id not in models_store:
         raise HTTPException(status_code=400, detail="Model not initialized. Run prediction first.")
 
-    hist_df = fetch_historical_data_internal(coin_id, days=30)
+    hist_df = await fetch_historical_data_async(coin_id, days=30)
     if hist_df is None:
         raise HTTPException(status_code=500, detail="Failed to fetch history")
         
@@ -409,7 +488,7 @@ async def get_dynamic_stoploss(coin_id: str):
     Simulates a Volatility-Adjusted Dynamic Stop-Loss and Take-Profit system.
     Returns simulated price history with upper (TP) and lower (SL) bands based on ATR.
     """
-    hist_df = fetch_historical_data_internal(coin_id, days=14)
+    hist_df = await fetch_historical_data_async(coin_id, days=14)
     if hist_df is None:
         raise HTTPException(status_code=500, detail="Failed to fetch history")
         
@@ -526,13 +605,25 @@ async def get_social_sentiment(coin_id: str):
 @router.get("/global")
 async def get_global_metrics():
     """Compute cross-coin metrics for top 5 coins."""
+    # Check cache first
+    cache_key = "global_metrics"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        return cached
+    
     # Get top coins first
     top_resp = await get_top_coins(limit=5)
     top_ids = list(top_resp.keys())
     
+    # Fetch ALL coins in PARALLEL instead of sequentially
+    async def fetch_one(coin_id):
+        df = await fetch_historical_data_async(coin_id, days=30)
+        return coin_id, df
+    
+    results = await asyncio.gather(*[fetch_one(cid) for cid in top_ids])
+    
     data = {}
-    for coin_id in top_ids:
-        hist_df = fetch_historical_data_internal(coin_id, days=30)
+    for coin_id, hist_df in results:
         if hist_df is not None:
             data[top_resp[coin_id]] = hist_df['price']
             
@@ -540,11 +631,26 @@ async def get_global_metrics():
         df = pd.DataFrame(data)
         correlation = df.corr().fillna(0).to_dict()
         volatility = df.std().fillna(0).to_dict()
-        return {
+        result = {
             "correlation": correlation,
             "volatility": volatility
         }
+        cache_set(cache_key, result)
+        return result
     raise HTTPException(status_code=500, detail="Failed to calculate global metrics")
+
+@router.post("/warmup/{coin_id}")
+async def warmup_endpoint(coin_id: str):
+    """Pre-warm the model for a coin so /predict is instant."""
+    if coin_id in models_store:
+        return {"status": "already_warmed", "coin_id": coin_id}
+    
+    loop = asyncio.get_event_loop()
+    model, correct, total_samples = await loop.run_in_executor(None, warmup_model, coin_id)
+    if model:
+        models_store[coin_id] = (model, correct, total_samples)
+        return {"status": "warmed", "coin_id": coin_id, "samples": total_samples}
+    raise HTTPException(status_code=500, detail="Failed to warmup model")
 
 @router.get("/whales/{coin_id}")
 async def get_whale_clusters(coin_id: str):
