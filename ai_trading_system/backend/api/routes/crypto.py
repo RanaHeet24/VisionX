@@ -39,7 +39,7 @@ def get_http_client() -> httpx.AsyncClient:
     return _http_client
 
 # Constants (from app.py)
-API_KEY = "CG-JrddorbGvoGXYrefNVosBPGk"
+API_KEY = "CG-L1Fe1GEJTA68kUTDiCLge4bf"
 BASE_URL = "https://api.coingecko.com/api/v3"
 
 # In-memory storage for models (per coin)
@@ -674,8 +674,12 @@ async def get_whale_clusters(coin_id: str):
         
         if response.status_code == 200:
             market_data = response.json().get('market_data', {})
-            live_price_change = market_data.get('price_change_percentage_24h', 0.0)
-            live_mcap = market_data.get('market_cap', {}).get('usd', 0.0)
+            # Robust extraction to prevent NoneType math errors
+            p_change = market_data.get('price_change_percentage_24h')
+            live_price_change = float(p_change) if p_change is not None else 0.0
+            
+            m_cap = market_data.get('market_cap', {}).get('usd')
+            live_mcap = float(m_cap) if m_cap is not None else 0.0
     except Exception as e:
         logger.error(f"Error fetching real-time whale context: {e}")
 

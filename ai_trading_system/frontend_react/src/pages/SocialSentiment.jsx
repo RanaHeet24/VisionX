@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Activity, Twitter, Globe, BrainCircuit } from 'lucide-react';
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const SocialSentiment = () => {
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

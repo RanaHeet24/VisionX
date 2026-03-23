@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import { RefreshCw } from 'lucide-react';
+import { CoinProvider } from './context/CoinContext';
 
 // Lazy-loaded pages for code splitting - only loads JS when navigated to
 const Landing = lazy(() => import('./pages/Landing'));
@@ -24,9 +25,11 @@ const RouteFallback = () => (
   </div>
 );
 
+
 function App() {
   return (
-    <Suspense fallback={<RouteFallback />}>
+    <CoinProvider>
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route element={<Layout />}>
@@ -45,7 +48,8 @@ function App() {
           <Route path="/audit" element={<SmartContractAudit />} />
         </Route>
       </Routes>
-    </Suspense>
+      </Suspense>
+    </CoinProvider>
   );
 }
 

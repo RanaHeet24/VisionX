@@ -22,7 +22,7 @@ if ($p -eq 'y') {
     npm install
 }
 
-# Start Backend (New Process)
+# Start Backend (New Process) - Must run from $root so 'backend' package is importable
 Write-Host "`n🖥️  Starting Backend API on port 8000..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList "cd '$root'; uvicorn backend.main:app --reload --port 8000"
 

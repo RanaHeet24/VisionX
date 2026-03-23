@@ -3,6 +3,7 @@ import { RefreshCw, Activity, Layers, ActivitySquare, AlertTriangle } from 'luci
 import { cryptoApi } from '../services/api';
 import MetricCard from '../components/MetricCard';
 import PriceChart from '../components/PriceChart';
+import { useCoin } from '../context/CoinContext';
 
 // Skeleton loader for perceived performance
 const SkeletonCard = () => (
@@ -24,7 +25,7 @@ const SkeletonChart = () => (
 
 function Dashboard() {
   const [topCoins, setTopCoins] = useState({});
-  const [selectedCoin, setSelectedCoin] = useState('');
+  const { selectedCoin, setSelectedCoin } = useCoin();
   const [liveData, setLiveData] = useState(null);
   const [predictionData, setPredictionData] = useState(null);
   const [globalMetrics, setGlobalMetrics] = useState(null);

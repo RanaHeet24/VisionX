@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Network, ShieldAlert, Wallet, ChevronRight, TrendingUp, TrendingDown, Cpu, Zap, BadgeCheck, ExternalLink } from 'lucide-react';
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, Cell } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const WhaleTracker = () => {
-    const [selectedCoin, setSelectedCoin] = useState("bitcoin");
+    const { selectedCoin, setSelectedCoin } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

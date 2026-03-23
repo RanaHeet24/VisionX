@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import { Activity, Code, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useCoin } from '../context/CoinContext';
 
 const SmartContractAudit = () => {
-    const coinId = "bitcoin"; // Usually applies to new alts
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

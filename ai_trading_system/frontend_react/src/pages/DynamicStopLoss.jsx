@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, ShieldCheck, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const DynamicStopLoss = () => {
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

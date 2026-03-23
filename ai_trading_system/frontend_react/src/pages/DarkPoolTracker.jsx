@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, EyeOff, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const DarkPoolTracker = () => {
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

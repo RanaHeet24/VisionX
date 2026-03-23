@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "D:\normal api - Copy\ai_trading_system\backend\catch.py", line 5, in <module>
+    import app
+ModuleNotFoundError: No module named 'app'

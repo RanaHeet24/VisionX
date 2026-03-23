@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Activity, Crosshair, ArrowUp, ArrowDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const LiquidationHeatmap = () => {
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

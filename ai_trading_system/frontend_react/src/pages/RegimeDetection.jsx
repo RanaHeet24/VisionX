@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { cryptoApi } from '../services/api';
 import { Layers, Activity, AlertTriangle } from 'lucide-react';
+import { useCoin } from '../context/CoinContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const RegimeDetection = () => {
-    // Hardcode to BTC for demonstration since the API expects an ID
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 

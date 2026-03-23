@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, ShieldOff, Zap } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell, ReferenceLine } from 'recharts';
+import { useCoin } from '../context/CoinContext';
 
 const SpoofingDetector = () => {
-    const coinId = "bitcoin";
+    const { selectedCoin: coinId } = useCoin();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
