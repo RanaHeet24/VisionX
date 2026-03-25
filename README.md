@@ -173,6 +173,7 @@ When the backend is running, access the interactive Swagger docs at:
 
 ---
 
+
 ## 🔮 Future Roadmap
 
 - **Live Exchange Integration** — Binance/Bybit for automated execution
